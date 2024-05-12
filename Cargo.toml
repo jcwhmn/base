@@ -1,0 +1,24 @@
+[package]
+name = "base"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = { workspace = true }
+dotenv  = { workspace = true }
+# json serialize and deserialize
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+thiserror  = { workspace = true }
+log  = { workspace = true }
+simple_logger = { workspace = true }
+
+sqlx = { workspace = true }
+sqlb = { workspace = true }
+futures = "0.3.30"
+async-trait = "0.1.80"
+lazy_static = "1.4.0"
+jsonwebtoken = "9.3.0"
+chrono = "0.4.38"
+anyhow = "1.0.83"

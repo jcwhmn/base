@@ -13,7 +13,7 @@ pub struct Todo {
 pub struct TodoPatch {
     pub cid: Option<i64>,
     pub title: Option<String>,
-    pub status: Option<TodoStatus>
+    pub status: Option<TodoStatus>,
 }
 
 #[derive(Serialize, Deserialize, sqlx::Type, Debug, Clone, PartialEq, Eq)]

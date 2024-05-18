@@ -2,31 +2,32 @@
 pub mod application_info;
 pub mod jwt;
 mod middleware;
-mod middleware1;
 
+use std::sync::Arc;
 use crate::model::db::{init_db, AppState};
-use crate::rest::middleware::SayHi;
-use crate::rest::middleware1::SayHi1;
+use crate::rest::middleware::Auth;
 use crate::todo::web::todo_config;
 use crate::user::web::user_config;
 use actix_web::web::Data;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use log::info;
+use crate::rest::application_info::get_user_info;
 
 #[get("/")]
 async fn health() -> impl Responder {
-    HttpResponse::Ok().body("First page")
+    let username = get_user_info().unwrap();
+    HttpResponse::Ok().body(format!("Hello, {}", username.username))
 }
 
 #[actix_web::main]
 pub async fn start_server() -> std::io::Result<()> {
     info!("Start server: http://localhost:8080");
     let db = init_db().await;
+    info!("db = {:?}", db);
     HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(AppState { db: db.clone() }))
-            .wrap(SayHi1)
-            .wrap(SayHi)
+            .app_data(Data::new(AppState{db: Arc::new(db.clone())}))
+            .wrap(Auth)
             .service(health)
             .service(
                 web::scope("/api")

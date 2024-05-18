@@ -1,12 +1,16 @@
+use std::sync::Arc;
+use actix_web::rt::Runtime;
 use dotenv::dotenv;
-use log::error;
+use lazy_static::lazy_static;
+use log::{error, info};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 
 pub type Db = Pool<Postgres>;
 
+#[derive(Debug)]
 pub struct AppState {
-    pub db: Db,
+    pub db: Arc<Db>,
 }
 
 pub async fn init_db() -> Db {
@@ -17,7 +21,10 @@ pub async fn init_db() -> Db {
         .connect(&db_url)
         .await
     {
-        Ok(db) => db,
+        Ok(db) => {
+            info!("Db Initialized");
+            db
+        },
         Err(_) => {
             error!("Error connecting to database");
             std::process::exit(1);

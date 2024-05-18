@@ -20,7 +20,7 @@ thread_local! {
 
 const USER_INFO: &str = "user_info";
 
-pub fn storeUserInfo(username: &str) -> Result<()> {
+pub fn store_user_info(username: &str) -> Result<()> {
     let user_info = UserInfo::new(username.to_string());
     Application_Info.with(|map| match map.write() {
         Ok(mut map) => {
@@ -31,7 +31,7 @@ pub fn storeUserInfo(username: &str) -> Result<()> {
     })
 }
 
-pub fn getUserInfo() -> crate::prelude::Result<UserInfo> {
+pub fn get_user_info() -> crate::prelude::Result<UserInfo> {
     Application_Info.with(|map| match map.read() {
         Ok(map) => match map.get(USER_INFO) {
             Some(user_info) => Ok(user_info.clone()),

@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use crate::model::db::AppState;
 use crate::todo::model::TodoPatch;
 use crate::todo::postgres_todo_repo;
@@ -8,8 +9,7 @@ use actix_web::{get, patch, post, HttpResponse, Responder};
 use log::{info, trace};
 
 #[get("/todos")]
-pub async fn todo_list(db: Data<AppState>) -> impl Responder {
-    let todo_repo = postgres_todo_repo::PostgresTodoRepo::new((&db.db).clone());
+pub async fn todo_list(todo_repo: PostgresTodoRepo) -> impl Responder {
     match todo_repo.todo_list().await {
         Ok(todos) => HttpResponse::Ok().json(todos),
         Err(_) => HttpResponse::Ok().body(format!("No todos")),
@@ -27,8 +27,7 @@ pub async fn todo_get(todo_repo: PostgresTodoRepo, id: Path<i64>) -> impl Respon
 }
 
 #[post("todos")]
-pub async fn todo_create(db: Data<AppState>, param_obj: Json<TodoPatch>) -> impl Responder {
-    let todo_repo = postgres_todo_repo::PostgresTodoRepo::new((&db.db).clone());
+pub async fn todo_create(todo_repo: PostgresTodoRepo, param_obj: Json<TodoPatch>) -> impl Responder {
     let patch: TodoPatch = param_obj.into_inner();
     info!("Create todo with {:?}", patch);
     match todo_repo.todo_create(patch).await {
@@ -40,10 +39,9 @@ pub async fn todo_create(db: Data<AppState>, param_obj: Json<TodoPatch>) -> impl
 #[patch("todos/{id}")]
 async fn todo_update(
     params_obj: Json<TodoPatch>,
-    db: Data<AppState>,
+    todo_repo: PostgresTodoRepo,
     id: Path<i64>,
 ) -> impl Responder {
-    let todo_repo = postgres_todo_repo::PostgresTodoRepo::new((&db.db).clone());
     let id = id.into_inner();
     let patch: TodoPatch = params_obj.into_inner();
     trace!("update todo with {:?}", patch);

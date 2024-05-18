@@ -11,7 +11,7 @@ struct Claims {
 }
 
 pub fn encodeToken(sub: &str) -> Result<String> {
-    let _date = Utc::now() + Duration::hours(1);
+    let _date = Utc::now() + Duration::hours(100);
     let claim = Claims {
         sub: sub.to_owned(),
         exp: _date.timestamp() as usize,

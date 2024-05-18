@@ -1,13 +1,20 @@
+use std::ops::Deref;
+use std::sync::Arc;
 use crate::error::MyError;
-use crate::model::db::Db;
+use crate::model::db::{AppState, Db};
 use crate::prelude::*;
 use crate::security::UserCtx;
 use crate::todo::model::{Todo, TodoPatch};
 use crate::todo::todo_repo::TodoRepo;
-use actix_web::dev::Payload;
-use actix_web::{FromRequest, HttpRequest};
+use actix_web::{
+    FromRequest, HttpRequest,
+    dev::Payload
+};
+use actix_web::web::Data;
 use async_trait::async_trait;
-use futures::future::{err, ok, Ready};
+use futures::future::{ok, Ready};
+use futures::StreamExt;
+use log::info;
 use sqlb::HasFields;
 
 #[derive(Clone)]
@@ -93,30 +100,11 @@ impl FromRequest for PostgresTodoRepo {
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
         // Get the database connection pool from the request extensions
+        //req.app_data::<AppState>();
         let pool = req
-            .app_data::<Db>()
+            .app_data::<Data<AppState>>()
             .expect("No database connection pool found");
-        let repo = PostgresTodoRepo::new(pool.clone());
-        ok(repo.clone())
+        //let repo = PostgresTodoRepo::new(pool.clone());
+        ok(PostgresTodoRepo::new(pool.db.deref().clone()))
     }
 }
-
-/*
-impl FromRequest for UserCtx {
-    type Error = actix_web::Error;
-    type Future = Ready<Result<UserCtx, actix_web::Error>>;
-
-    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
-        if let Some(token) = req.match_info().get(HEADER_XAUTH) {
-            match token.parse::<i64>() {
-                Ok(user_id) => ok(UserCtx { user_id: user_id}),
-                Err(_) => err(ErrorUnauthorized("invalid token!")),
-            }
-        } else {
-            err(ErrorUnauthorized("no token!"))
-        }
-    }
-
-}
-
-*/

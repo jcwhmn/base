@@ -1,7 +1,7 @@
 use crate::error::MyError::*;
 use crate::prelude;
 use crate::prelude::MyError::{NoAuthorization, WrongAuthorizationFormat};
-use crate::rest::application_info::{getUserInfo, storeUserInfo, UserInfo};
+use crate::rest::application_info::{get_user_info, store_user_info, UserInfo};
 use crate::rest::jwt::{decodeToken, encodeToken};
 use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::http::header;
@@ -13,11 +13,11 @@ use std::future::{ready, Future, Ready};
 use std::pin::Pin;
 use std::str::FromStr;
 
-pub struct SayHi;
+pub struct Auth;
 
 // `S` - type of the next service
 // `B` - type of response's body
-impl<S, B> Transform<S, ServiceRequest> for SayHi
+impl<S, B> Transform<S, ServiceRequest> for Auth
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -26,15 +26,15 @@ where
     type Response = ServiceResponse<B>;
     type Error = Error;
     type InitError = ();
-    type Transform = SayHiMiddleware<S>;
+    type Transform = AuthMiddleware<S>;
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(SayHiMiddleware { service }))
+        ready(Ok(AuthMiddleware { service }))
     }
 }
 
-pub struct SayHiMiddleware<S> {
+pub struct AuthMiddleware<S> {
     /// The next service to call
     service: S,
 }
@@ -45,7 +45,7 @@ type LocalBoxFuture<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
 
 // `S`: type of the wrapped service
 // `B`: type of the body - try to be generic over the body where possible
-impl<S, B> Service<ServiceRequest> for SayHiMiddleware<S>
+impl<S, B> Service<ServiceRequest> for AuthMiddleware<S>
 where
     S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>,
     S::Future: 'static,
@@ -82,7 +82,7 @@ const BEARER: &str = "Bearer";
 
 fn post_response(map: &mut HeaderMap) {
     // fetch UserInfo from ThreadLocal
-    let user_info = getUserInfo();
+    let user_info = get_user_info();
     if user_info.is_err() {
         return;
     }
@@ -111,7 +111,7 @@ fn process_jwt(req: &ServiceRequest) -> prelude::Result<()> {
         return Err(WrongAuthorizationFormat);
     }
     let username = decodeToken(auths[1])?;
-    storeUserInfo(&username)?;
+    store_user_info(&username)?;
     info!("auth = {:?}", auth);
     Ok(())
 }
